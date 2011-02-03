@@ -487,6 +487,8 @@ class Component(models.Model, ChargifyBaseModel):
     price = models.DecimalField(decimal_places = 2, max_digits = 15, default=Decimal('0.00'))
     product_family = models.IntegerField(blank=True, null=True)
 
+    api_component = None
+
     def _price_per_unit_in_cents(self):
         return self._in_cents(self.price)
     def _set_price_per_unit_in_cents(self, price):
@@ -494,7 +496,7 @@ class Component(models.Model, ChargifyBaseModel):
     price_per_unit_in_cents = property(_price_per_unit_in_cents, _set_price_per_unit_in_cents)
 
     def load(self, api, commit=True):
-        self.chargify_id = int(api.id)
+        self.chargify_id = int(api.component_id)
         self.price_per_unit_in_cents = api.price_per_unit_in_cents
         self.name = api.name
         self.product_family = api.product_family_id
@@ -512,12 +514,14 @@ class Component(models.Model, ChargifyBaseModel):
     
     def _api(self, node_name = ''):
         """ Load data into chargify api object """
-        component = self.gateway.Component(node_name)
-        component.id = str(self.chargify_id)
-        component.price_per_unit_in_cents = self.price_per_unit_in_cents
-        component.name = self.name
-        component.product_family_id = self.product_family
-        return product
+        if not self.api_component:
+            component = self.gateway.Component(node_name)
+            component.component_id = str(self.chargify_id)
+            component.price_per_unit_in_cents = self.price_per_unit_in_cents
+            component.name = self.name
+            component.product_family_id = self.product_family
+            self.api_component = component
+        return self.api_component
     api = property(_api)
 
 

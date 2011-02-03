@@ -459,7 +459,8 @@ class ChargifySubscription(ChargifyBase):
     __attribute_types__ = {
         'customer': 'ChargifyCustomer',
         'product': 'ChargifyProduct',
-        'credit_card': 'ChargifyCreditCard'
+        'credit_card': 'ChargifyCreditCard',
+        'component': 'ChargifyComponent'
     }
     __xmlnodename__ = 'subscription'
     
@@ -608,22 +609,31 @@ class ChargifyComponent(ChargifyBase):
     __name__ = 'ChargifyComponent'
     __attribute_types__ = {}
     __xmlnodename__ = 'component'
-    __ignore__ = ['enabled']
 
-    id = None
+    component_id = None
     name = None
     unit_name = None
     created_at = None
-    update_at = None
+    updated_at = None
     price_per_unit_in_cents = None
     product_family_id = None
-    enabled = None
+    enabled = ''
 
     def __init__(self, apikey, subdomain, product_family_id = None, nodename = ''):
         super( ChargifyComponent, self ).__init__(apikey, subdomain)
+        self.__ignore__.extend(['name', 'unit_name', 'created_at', 'updated_at', 'price_per_unit_in_cents', 'product_family_id'])
         self.product_family_id = product_family_id
         if nodename:
             self.__xmlnodename__ = nodename
+
+    def enable(self):
+        self.enabled = 'true'
+
+    def disable(self):
+        self.enabled = 'false'
+
+    def get_status(self):
+        return True if self.enabled == 'true' else False
 
     def getPriceInDollars(self):
         return round(float(self.price_per_unit_in_cents) / 100, 2)
