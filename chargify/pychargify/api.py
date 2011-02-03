@@ -600,6 +600,46 @@ class ChargifyPostBack(ChargifyBase):
             self.subscriptions.append(csub.getBySubscriptionId(obj))
 
 
+class ChargifyComponent(ChargifyBase):
+    """
+    Represents Chargify Customers
+    @license    GNU General Public License
+    """
+    __name__ = 'ChargifyComponent'
+    __attribute_types__ = {}
+    __xmlnodename__ = 'component'
+    __ignore__ = ['enabled']
+
+    id = None
+    name = None
+    unit_name = None
+    created_at = None
+    update_at = None
+    price_per_unit_in_cents = None
+    product_family_id = None
+    enabled = None
+
+    def __init__(self, apikey, subdomain, product_family_id = None, nodename = ''):
+        super( ChargifyComponent, self ).__init__(apikey, subdomain)
+        self.product_family_id = product_family_id
+        if nodename:
+            self.__xmlnodename__ = nodename
+
+    def getPriceInDollars(self):
+        return round(float(self.price_per_unit_in_cents) / 100, 2)
+
+    def getAll(self):
+        if self.product_family_id is None: 
+            raise Exception('You must supply a product family')
+        return self._applyA(self._get('/product_families/%s/components.xml' % (self.product_family_id)), self.__name__, 'component')
+    
+    def save(self):
+        raise NotImplementedError #Chargify won't let you do this from the API
+
+    def delete(self):
+        raise NotImplementedError #Chargify won't let you do this from the API
+
+
 class Chargify:
     """
     The Chargify class provides the main entry point to the Charify API
@@ -626,3 +666,6 @@ class Chargify:
     
     def PostBack(self, postbackdata):
         return ChargifyPostBack(self.api_key, self.sub_domain, postbackdata)
+
+    def Component(self, nodename = '', product_family_id = None):
+        return ChargifyComponent(self.api_key, self.sub_domain, nodename, product_family_id)

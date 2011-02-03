@@ -478,6 +478,49 @@ class SubscriptionManager(ChargifyBaseManager):
                 sub.save()
 
 
+class Component(models.Model, ChargifyBaseModel):
+    chargify_id = models.IntegerField(null=True, blank=False, unique=True)
+    name = models.CharField(blank=True, null=True, max_length=75)
+    unit_name = models.CharField(blank=True, null=True, max_length=75)
+    created_at = models.DateTimeField(blank=True, null=True)
+    update_at = models.DateTimeField(blank=True, null=True)
+    price = models.DecimalField(decimal_places = 2, max_digits = 15, default=Decimal('0.00'))
+    product_family = models.IntegerField(blank=True, null=True)
+
+    def _price_per_unit_in_cents(self):
+        return self._in_cents(self.price)
+    def _set_price_per_unit_in_cents(self, price):
+        self.price = self._from_cents(price)
+    price_per_unit_in_cents = property(_price_per_unit_in_cents, _set_price_per_unit_in_cents)
+
+    def load(self, api, commit=True):
+        self.chargify_id = int(api.id)
+        self.price_per_unit_in_cents = api.price_per_unit_in_cents
+        self.name = api.name
+        self.product_family = api.product_family_id
+        self.unit_name = api.name
+        self.created_at = api.created_at
+        self.updated_at = api.updated_at
+        if commit:
+            self.save()
+        return self
+    
+    def update(self, commit = True):
+        """ Update customer data from chargify """
+        api = self.api.getById(self.chargify_id)
+        return self.load(api, commit = True)
+    
+    def _api(self, node_name = ''):
+        """ Load data into chargify api object """
+        component = self.gateway.Component(node_name)
+        component.id = str(self.chargify_id)
+        component.price_per_unit_in_cents = self.price_per_unit_in_cents
+        component.name = self.name
+        component.product_family_id = self.product_family
+        return product
+    api = property(_api)
+
+
 class Subscription(models.Model, ChargifyBaseModel):
     TRIALING = 'trialing'
     ASSESSING = 'assessing'
