@@ -160,6 +160,9 @@ class ChargifyBase(object):
                     obj.__setattr__(childnodes.nodeName, self._applyS(childnodes.toxml(), self.__attribute_types__[childnodes.nodeName], childnodes.nodeName))
                 else:
                     node_value = self.__get_xml_value(childnodes.childNodes)
+                    # anyone have a better idea?
+                    if childnodes.nodeName == 'product_family':
+                        node_value = self.__get_xml_value(childnodes.getElementsByTagName('id')[0].childNodes)
                     if "type" in  childnodes.attributes.keys():
                         node_type = childnodes.attributes["type"]
                         if node_value:
@@ -412,7 +415,7 @@ class ChargifyProduct(ChargifyBase):
     price_in_cents = 0
     name = ''
     handle = ''
-    product_family = {}
+    product_family = 0
     accounting_code = ''
     interval_unit = ''
     interval = 0
@@ -595,6 +598,7 @@ class ChargifyPostBack(ChargifyBase):
         postdata_objects = json.loads(data)
         for obj in postdata_objects:
             self.subscriptions.append(csub.getBySubscriptionId(obj))
+
 
 class Chargify:
     """

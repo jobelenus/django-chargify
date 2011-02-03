@@ -277,7 +277,7 @@ class Product(models.Model, ChargifyBaseModel):
     price = models.DecimalField(decimal_places = 2, max_digits = 15, default=Decimal('0.00'))
     name = models.CharField(max_length=75)
     handle = models.CharField(max_length=75, default='')
-    product_family = {}
+    product_family = models.IntegerField(null=True, blank=False)
     accounting_code = models.CharField(max_length=30, null=True)
     interval_unit = models.CharField(max_length=10, choices = INTERVAL_TYPES, default=MONTH)
     interval = models.IntegerField(default=1)
