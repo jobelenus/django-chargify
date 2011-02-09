@@ -200,7 +200,8 @@ class ChargifyBase(object):
         for property, value in self.__dict__.iteritems():
             if not property in self.__ignore__:
                 if property in self.__attribute_types__:
-                    element.appendChild(value._toxml(dom))
+                    if value:
+                        element.appendChild(value._toxml(dom))
                 else:
                     node = minidom.Element(property)
                     if isinstance(value, datetime.datetime):
@@ -470,7 +471,6 @@ class ChargifySubscription(ChargifyBase):
     current_period_started_at = None
     current_period_ends_at = None
     next_assessment_at = None
-    next_billing_at = None
     trial_started_at = None
     trial_ended_at = None
     activated_at = None
@@ -479,6 +479,7 @@ class ChargifySubscription(ChargifyBase):
     updated_at = None
     customer = None
     product = None
+    component = None
     product_handle = ''
     credit_card = None
     
@@ -487,7 +488,7 @@ class ChargifySubscription(ChargifyBase):
         # apparently adding these here gets them into __dict__
         self.balance_in_cents = 0
         self.next_assessment_at = None
-        self.next_billing_at = None
+        self.component = None
         if nodename:
             self.__xmlnodename__ = nodename
     
@@ -617,7 +618,7 @@ class ChargifyComponent(ChargifyBase):
     updated_at = None
     price_per_unit_in_cents = None
     product_family_id = None
-    enabled = ''
+    allocated_quantity = None
 
     def __init__(self, apikey, subdomain, product_family_id = None, nodename = ''):
         super( ChargifyComponent, self ).__init__(apikey, subdomain)
@@ -626,14 +627,22 @@ class ChargifyComponent(ChargifyBase):
         if nodename:
             self.__xmlnodename__ = nodename
 
+    def _toxml(self, dom):
+        # components need to wrap around component
+        outernode = minidom.Element('components')
+        outernode.setAttribute('type', 'array')
+        xmlnode = super( ChargifyComponent, self )._toxml(dom)
+        outernode.appendChild(xmlnode)
+        return outernode
+
     def enable(self):
-        self.enabled = 'true'
+        self.allocated_quantity = '1'
 
     def disable(self):
-        self.enabled = 'false'
+        self.allocated_quantity = None
 
     def get_status(self):
-        return True if self.enabled == 'true' else False
+        return True if self.allocated_quantity == '1' else False
 
     def getPriceInDollars(self):
         return round(float(self.price_per_unit_in_cents) / 100, 2)

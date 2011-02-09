@@ -84,7 +84,7 @@ class Models(TestCase):
         c.update(True)
         c.save()
         c = models.Customer.objects.get(id=c.id)
-        # Check origional vs new chargify id.  Make sure it didn't make a new customer
+        # Check original vs new chargify id.  Make sure it didn't make a new customer
         self.assertEqual(c.api.id, o_id)
         self.assertEqual(c.api.first_name, 'Hello')
         self.assertEqual(c.first_name, 'Hello')

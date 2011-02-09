@@ -561,6 +561,7 @@ class Subscription(models.Model, ChargifyBaseModel):
     last_activation_at = models.DateTimeField(null=True, blank=True)
     customer = models.ForeignKey(Customer, null=True)
     product = models.ForeignKey(Product, null=True)
+    component = models.ForeignKey(Component, null=True, blank=True)
     credit_card = models.OneToOneField(CreditCard, related_name='subscription', null=True, blank=True)
     active = models.BooleanField(default=True)
     objects = SubscriptionManager()
@@ -693,6 +694,8 @@ class Subscription(models.Model, ChargifyBaseModel):
         if self.chargify_id:
             subscription.id = str(self.chargify_id)
         subscription.product = self.product.api
+        if self.component:
+            subscription.component = self.component.api
         subscription.product_handle = self.product_handle
         subscription.balance_in_cents = self.balance_in_cents
         if self.next_assessment_at:
