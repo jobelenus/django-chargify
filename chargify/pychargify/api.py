@@ -200,7 +200,13 @@ class ChargifyBase(object):
         for property, value in self.__dict__.iteritems():
             if not property in self.__ignore__:
                 if property in self.__attribute_types__:
-                    if value:
+                    if type(value) == type([]): # iterate over a list
+                        wrapper = minidom.Element(value[0]._wrapper_nodename)
+                        wrapper.setAttribute('type', 'array') # pretty much a default behavior in chargify
+                        for v in value:
+                            wrapper.appendChild(v._toxml(dom))
+                        element.appendChild(wrapper)
+                    elif value:
                         element.appendChild(value._toxml(dom))
                 else:
                     node = minidom.Element(property)
@@ -461,7 +467,7 @@ class ChargifySubscription(ChargifyBase):
         'customer': 'ChargifyCustomer',
         'product': 'ChargifyProduct',
         'credit_card': 'ChargifyCreditCard',
-        'component': 'ChargifyComponent'
+        'components': 'ChargifyComponent'
     }
     __xmlnodename__ = 'subscription'
     
@@ -479,7 +485,7 @@ class ChargifySubscription(ChargifyBase):
     updated_at = None
     customer = None
     product = None
-    component = None
+    components = []
     product_handle = ''
     credit_card = None
     
@@ -488,7 +494,7 @@ class ChargifySubscription(ChargifyBase):
         # apparently adding these here gets them into __dict__
         self.balance_in_cents = 0
         self.next_assessment_at = None
-        self.component = None
+        self.components = []
         if nodename:
             self.__xmlnodename__ = nodename
     
@@ -610,6 +616,7 @@ class ChargifyComponent(ChargifyBase):
     __name__ = 'ChargifyComponent'
     __attribute_types__ = {}
     __xmlnodename__ = 'component'
+    _wrapper_nodename = 'components'
 
     component_id = None
     name = None
@@ -626,14 +633,6 @@ class ChargifyComponent(ChargifyBase):
         self.product_family_id = product_family_id
         if nodename:
             self.__xmlnodename__ = nodename
-
-    def _toxml(self, dom):
-        # components need to wrap around component
-        outernode = minidom.Element('components')
-        outernode.setAttribute('type', 'array')
-        xmlnode = super( ChargifyComponent, self )._toxml(dom)
-        outernode.appendChild(xmlnode)
-        return outernode
 
     def enable(self):
         self.allocated_quantity = '1'
@@ -657,6 +656,10 @@ class ChargifyComponent(ChargifyBase):
 
     def delete(self):
         raise NotImplementedError #Chargify won't let you do this from the API
+
+    def _toxml(self, dom):
+        return super(ChargifyComponent, self)._toxml(dom)
+        
 
 
 class Chargify:

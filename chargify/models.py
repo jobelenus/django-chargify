@@ -561,10 +561,11 @@ class Subscription(models.Model, ChargifyBaseModel):
     last_activation_at = models.DateTimeField(null=True, blank=True)
     customer = models.ForeignKey(Customer, null=True)
     product = models.ForeignKey(Product, null=True)
-    component = models.ForeignKey(Component, null=True, blank=True)
+    components = models.ManyToManyField(Component, null=True, blank=True)
     credit_card = models.OneToOneField(CreditCard, related_name='subscription', null=True, blank=True)
     active = models.BooleanField(default=True)
     objects = SubscriptionManager()
+    activate_components = []
     
     def __unicode__(self):
         s = unicode(self.get_state_display())
@@ -580,6 +581,10 @@ class Subscription(models.Model, ChargifyBaseModel):
     def _set_balance_in_cents(self, value):
         self.balance = self._from_cents(value)
     balance_in_cents = property(_balance_in_cents, _set_balance_in_cents)
+
+    def add_component(self, component):
+        self.components.add(component)
+        self.activate_components.append(component)
     
     def _product_handle(self):
         return self.product.handle
@@ -694,8 +699,9 @@ class Subscription(models.Model, ChargifyBaseModel):
         if self.chargify_id:
             subscription.id = str(self.chargify_id)
         subscription.product = self.product.api
-        if self.component:
-            subscription.component = self.component.api
+        for component in self.activate_components:
+            subscription.components.append(component.api)
+            subscription.components[-1].enable()
         subscription.product_handle = self.product_handle
         subscription.balance_in_cents = self.balance_in_cents
         if self.next_assessment_at:
