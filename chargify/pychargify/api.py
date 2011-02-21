@@ -201,11 +201,12 @@ class ChargifyBase(object):
             if not property in self.__ignore__:
                 if property in self.__attribute_types__:
                     if type(value) == type([]): # iterate over a list
-                        wrapper = minidom.Element(value[0]._wrapper_nodename)
-                        wrapper.setAttribute('type', 'array') # pretty much a default behavior in chargify
-                        for v in value:
-                            wrapper.appendChild(v._toxml(dom))
-                        element.appendChild(wrapper)
+                        if len(value):
+                            wrapper = minidom.Element(value[0]._wrapper_nodename)
+                            wrapper.setAttribute('type', 'array') # pretty much a default behavior in chargify
+                            for v in value:
+                                wrapper.appendChild(v._toxml(dom))
+                            element.appendChild(wrapper)
                     elif value:
                         element.appendChild(value._toxml(dom))
                 else:
